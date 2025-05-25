@@ -1,12 +1,16 @@
 CC=clang
 CXX=clang++
 
+.PHONY: clean
+
 all: challenge_binary challenge_unittests challenge_bench
 
 CXXFLAGS_COMMON = \
 	-O3 \
+	-gdwarf-4 \
 	-std=c++26 \
-	-stdlib=libc++
+	-stdlib=libc++ \
+	-march=native
 
 # ---------------- challenge_binary ----------------
 
@@ -15,6 +19,11 @@ SRC_HPP = $(shell find ./src -type f -name '*.hpp')
 
 challenge_binary: $(SRC_CPP) $(SRC_HPP)
 	$(CXX) $(CXXFLAGS_COMMON) -o $@ $(SRC_CPP) ./src/main.cpp
+
+clean_challenge_binary:
+	$(RM) -v ./challenge_binary
+
+clean: clean_challenge_binary
 
 # ---------------- GOOGLETEST ----------------
 
@@ -62,6 +71,11 @@ LDLIBS_TESTS = \
 challenge_unittests: $(SRC_CPP) $(SRC_HPP) $(TESTS_CPP) $(TESTS_HPP) $(LIBGTEST)
 	$(CXX) $(CXXFLAGS_TESTS) -o $@ $(TESTS_CPP) $(SRC_CPP) $(LDLIBS_TESTS)
 
+clean_challenge_unittests:
+	$(RM) -v ./challenge_unittests
+
+clean: clean_challenge_unittests
+
 # ------------------- challenge_benchmarks ------------
 
 BENCH_CPP = $(shell find ./benchmarks -type f -name '*.cpp')
@@ -77,3 +91,7 @@ LDLIBS_BENCH = \
 challenge_bench: $(SRC_CPP) $(SRC_HPP) $(BENCH_CPP) $(BENCH_HPP) $(LIBBENCHMARK_MAIN)
 	$(CXX) $(CXXFLAGS_BENCH) -o $@ $(BENCH_CPP) $(SRC_CPP) $(LDLIBS_BENCH)
 
+clean_challenge_bench:
+	$(RM) -v ./challenge_bench
+
+clean: clean_challenge_bench
