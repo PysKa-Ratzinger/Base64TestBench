@@ -157,31 +157,26 @@ extern "C"
 			}
 		};
 
+		auto actuallyHashTheThing =
+		        [](CurrentHashState& state, std::byte chr)
+		{
+			state.hash_v = (state.hash_v + size_t(chr)) * state.p %
+			               0x7437d327;
+			state.p = (state.p * 31) % 0x32714;
+		};
+
 		auto callback2 = [&](std::vector<std::byte> result) -> int
 		{
 			auto doTheHash =
 			        [&](CurrentHashState            state,
 			            std::function<void(size_t)> op) -> size_t
 			{
-				auto actuallyHashTheThing =
-				        [](CurrentHashState& state,
-				           std::byte         chr)
-				{
-					state.hash_v =
-					        (state.hash_v + size_t(chr)) *
-					        state.p % 0x7437d327;
-					state.p = (state.p * 31) % 0x32714;
-				};
-
 				std::ranges::for_each(
 				        result,
 				        [&](auto chr)
 				        {
 					        actuallyHashTheThing(state, chr);
-
-					        if (op) {
-						        op(state.hash_v);
-					        }
+					        op(state.hash_v);
 				        }
 				);
 
