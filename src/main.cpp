@@ -78,8 +78,7 @@ extern "C"
 			                "IHwvICAgICBgICAgICAgIC8vICAgICAgICAnICAg"
 			                "ICBcfCAKIGAgICAgICAgICAgICAgIFYgICAgICAg"
 			                "ICAgICAgICAgJwo=";
-			        char* null_arg = "";
-			        char* args[]   = { &msg[0], null_arg };
+			        char* args[]   = { &msg[0], "" };
 
 			        if (actualMain(576, args) == 0) {
 				        exit(0);
