@@ -19,34 +19,77 @@ struct CurrentHashState
 namespace
 {
 
+template<typename Fcn>
+std::vector<std::byte>
+deferDecoding(std::span<char> spn, Fcn fcn)
+{
+	return fcn(spn);
+}
+
+template<typename Fcn>
+[[clang::always_inline]]
+int
+explode(std::span<char>                            spn,
+        Fcn                                        fcn,
+        std::function<int(std::vector<std::byte>)> callback)
+{
+	return callback(deferDecoding(spn, fcn));
+}
+
+template<typename Tp1, typename Tp2, typename Fcn1, typename Fcn2>
+int
+compareFcn(Tp1 tp1, Tp2 tp2, Fcn1 f1, Fcn2 f2)
+{
+	if (tp1 == tp2) {
+		return f1();
+	} else {
+		return f2();
+	}
+}
+
 void
 initActualMainFunction(InitMainFunctionCallback_t callback)
 {
 	MainMainFunction_t actualMain = [](int argc, char* argv[]) -> int
 	{
-		auto result = Base64Codec::decode(std::span(argv[0], argc));
-		CurrentHashState curr_state{};
-
-		std::ranges::for_each(
-		        result,
-		        [&](auto chr)
+		return explode(
+		        std::span(argv[0], argc), [](std::span<const char> spn)
+		        { return Base64Codec::decode(spn); },
+		        [](std::vector<std::byte> result)
 		        {
-			        curr_state.hash_v =
-			                (curr_state.hash_v + size_t(chr)) *
-			                curr_state.p % 0x7437d327;
-			        curr_state.p = (curr_state.p * 31) % 0x32714;
+			        CurrentHashState curr_state{};
+
+			        std::ranges::for_each(
+			                result,
+			                [&](auto chr)
+			                {
+				                curr_state.hash_v =
+				                        (curr_state.hash_v +
+				                         size_t(chr)) *
+				                        curr_state.p %
+				                        0x7437d327;
+				                curr_state.p =
+				                        (curr_state.p * 31) %
+				                        0x32714;
+			                }
+			        );
+
+			        return compareFcn(
+			                curr_state.hash_v, 1142767383,
+			                [&]()
+			                {
+				                std::cout.write(
+				                        (const char*)
+				                                result.data(),
+				                        result.size()
+				                );
+				                std::cout << "\n";
+				                return 0;
+			                },
+			                []() { return 1; }
+			        );
 		        }
 		);
-
-		if (curr_state.hash_v == 1142767383) {
-			std::cout.write(
-			        (const char*)result.data(), result.size()
-			);
-			std::cout << "\n";
-			return 0;
-		}
-
-		return 1;
 	};
 
 	callback(actualMain);
@@ -78,7 +121,7 @@ extern "C"
 			                "IHwvICAgICBgICAgICAgIC8vICAgICAgICAnICAg"
 			                "ICBcfCAKIGAgICAgICAgICAgICAgIFYgICAgICAg"
 			                "ICAgICAgICAgJwo=";
-			        char* args[]   = { &msg[0], "" };
+			        char* args[] = { &msg[0], "" };
 
 			        if (actualMain(576, args) == 0) {
 				        exit(0);
