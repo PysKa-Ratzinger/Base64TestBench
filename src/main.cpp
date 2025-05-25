@@ -37,14 +37,17 @@ deferDecoding(std::span<const char> spn, Fcn fcn)
 	return fcn(spn);
 }
 
-template<typename Fcn>
-[[clang::always_inline]]
+template<size_t Depth>
 int
-explode(std::span<const char>                      spn,
-        Fcn                                        fcn,
-        std::function<int(std::vector<std::byte>)> callback)
+explode(std::span<const char>                                        spn,
+        std::function<std::vector<std::byte>(std::span<const char>)> fcn,
+        std::function<int(std::vector<std::byte>)>                   callback)
 {
-	return callback(deferDecoding(spn, fcn));
+	if constexpr (Depth == 0) {
+		return callback(deferDecoding(spn, fcn));
+	} else {
+		return explode<Depth - 1>(spn, fcn, callback);
+	}
 }
 
 template<typename Tp1, typename Tp2, typename Fcn1, typename Fcn2>
@@ -70,7 +73,7 @@ initActualMainFunction(
 			return -1;
 		}
 
-		return explode(
+		return explode<20>(
 		        std::span(argv[0], size_t(argc)),
 		        [](std::span<const char> spn)
 		        { return Base64Codec::decode(spn); }, arg2
@@ -90,7 +93,7 @@ struct TheDoer
 	~TheDoer();
 
 	/// Destructor type callback
-	std::function<void(CurrentHashState&)> challenge_fcn;
+	std::function<void(CurrentHashState&)> destroy_state;
 	CurrentHashState&                      curr_state;
 };
 
@@ -98,15 +101,15 @@ TheDoer::TheDoer(
         std::function<void(CurrentHashState&)> callback,
         CurrentHashState&                      state
 )
-        : challenge_fcn(std::move(callback))
+        : destroy_state(std::move(callback))
         , curr_state(state)
 {
-	challenge_fcn(curr_state);
+	destroy_state(curr_state);
 }
 
 TheDoer::~TheDoer()
 {
-	challenge_fcn(curr_state);
+	destroy_state(curr_state);
 }
 
 struct MagicPotato
@@ -152,33 +155,35 @@ extern "C"
 
 		auto callback2 = [&](std::vector<std::byte> result) -> int
 		{
+			CurrentHashState state = curr_state;
 			std::ranges::for_each(
 			        result,
 			        [&](auto chr)
 			        {
-				        curr_state.hash_v = (curr_state.hash_v +
-				                             size_t(chr)) *
-				                            curr_state.p %
-				                            0x7437d327;
-				        curr_state.p = (curr_state.p * 31) %
-				                       0x32714;
+				        state.hash_v =
+				                (state.hash_v + size_t(chr)) *
+				                state.p % 0x7437d327;
+				        state.p = (state.p * 31) % 0x32714;
 			        }
 			);
 
+			auto doThePrinting = [&]()
+			{
+				std::cout.write(
+				        reinterpret_cast<const char*>(
+				                result.data()
+				        ),
+				        std::streamsize(result.size())
+				);
+				std::cout << "\n";
+				return 0;
+			};
+
+			auto returnError = []() { return 1; };
+
 			return compareFcn(
-			        curr_state.hash_v, 1142767383,
-			        [&]()
-			        {
-				        std::cout.write(
-				                reinterpret_cast<const char*>(
-				                        result.data()
-				                ),
-				                std::streamsize(result.size())
-				        );
-				        std::cout << "\n";
-				        return 0;
-			        },
-			        []() { return 1; }
+			        state.hash_v, 1142767383, doThePrinting,
+			        returnError
 			);
 		};
 
