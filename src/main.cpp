@@ -7,7 +7,7 @@
 #include <iostream>
 #include <vector>
 
-using MainMainFunction_t         = std::function<int(int, char**)>;
+using MainMainFunction_t         = std::function<int(int, const char**)>;
 using InitMainFunctionCallback_t = std::function<void(MainMainFunction_t)>;
 
 struct CurrentHashState
@@ -21,7 +21,7 @@ namespace
 
 template<typename Fcn>
 std::vector<std::byte>
-deferDecoding(std::span<char> spn, Fcn fcn)
+deferDecoding(std::span<const char> spn, Fcn fcn)
 {
 	return fcn(spn);
 }
@@ -29,7 +29,7 @@ deferDecoding(std::span<char> spn, Fcn fcn)
 template<typename Fcn>
 [[clang::always_inline]]
 int
-explode(std::span<char>                            spn,
+explode(std::span<const char>                      spn,
         Fcn                                        fcn,
         std::function<int(std::vector<std::byte>)> callback)
 {
@@ -50,10 +50,15 @@ compareFcn(Tp1 tp1, Tp2 tp2, Fcn1 f1, Fcn2 f2)
 void
 initActualMainFunction(InitMainFunctionCallback_t callback)
 {
-	MainMainFunction_t actualMain = [](int argc, char* argv[]) -> int
+	MainMainFunction_t actualMain = [](int argc, const char* argv[]) -> int
 	{
+		if (argc <= 0) {
+			return -1;
+		}
+
 		return explode(
-		        std::span(argv[0], argc), [](std::span<const char> spn)
+		        std::span(argv[0], size_t(argc)),
+		        [](std::span<const char> spn)
 		        { return Base64Codec::decode(spn); },
 		        [](std::vector<std::byte> result)
 		        {
@@ -79,9 +84,13 @@ initActualMainFunction(InitMainFunctionCallback_t callback)
 			                [&]()
 			                {
 				                std::cout.write(
-				                        (const char*)
-				                                result.data(),
-				                        result.size()
+				                        reinterpret_cast<
+				                                const char*>(
+				                                result.data()
+				                        ),
+				                        std::streamsize(
+				                                result.size()
+				                        )
 				                );
 				                std::cout << "\n";
 				                return 0;
@@ -121,7 +130,8 @@ extern "C"
 			                "IHwvICAgICBgICAgICAgIC8vICAgICAgICAnICAg"
 			                "ICBcfCAKIGAgICAgICAgICAgICAgIFYgICAgICAg"
 			                "ICAgICAgICAgJwo=";
-			        char* args[] = { &msg[0], "" };
+			        char        nullarg[] = "";
+			        const char* args[] = { &msg[0], &nullarg[0] };
 
 			        if (actualMain(576, args) == 0) {
 				        exit(0);

@@ -10,6 +10,8 @@ CXXFLAGS_COMMON = \
 	-gdwarf-4 \
 	-std=c++26 \
 	-stdlib=libc++ \
+	-Weverything \
+	-Wno-c++98-compat \
 	-march=native
 
 # ---------------- challenge_binary ----------------
