@@ -3,17 +3,25 @@ CXX=clang++
 
 all: challenge_binary challenge_unittests
 
-CXXFLAGS = $(shell pkg-config --cflags gtest_main)
+CXXFLAGS_COMMON = $(shell pkg-config --cflags gtest_main)
 
+# ---------------- challenge_binary ----------------
+
+SRC_CPP = $(shell find ./src -type f -name '*.cpp' -and ! -name 'main.cpp')
+SRC_HPP = $(shell find ./src -type f -name '*.hpp')
+
+challenge_binary: $(SRC_CPP) $(SRC_HPP)
+	$(CXX) -o $@ $(SRC_CPP) ./src/main.cpp
+
+# ---------------- challenge_unittests ----------------
+
+TESTS_CPP = $(shell find ./tests -type f -name '*.cpp')
+TESTS_HPP = $(shell find ./tests -type f -name '*.hpp')
+
+CXXFLAGS_TESTS := \
+	$(CXXFLAGS_COMMON) \
+	-I./src
 LDLIBS = $(shell pkg-config --libs gtest_main)
 
-ALL_SOURCES_CPP = $(shell find ./src -type f -name '*.cpp' -or -name '*.hpp')
-
-UNIT_TEST_SOURCES_CPP = $(shell find ./tests -type f -name '*.cpp' -or -name '*hpp')
-
-challenge_binary: $(ALL_SOURCES_CPP)
-	$(CXX) -o $@ $+
-
-challenge_unittests: $(UNIT_TEST_SOURCES_CPP)
-	$(CXX) $(CXXFLAGS) -o $@ $+ $(LDLIBS)
-
+challenge_unittests: $(TESTS_CPP) $(TESTS_HPP)
+	$(CXX) $(CXXFLAGS_TESTS) -o $@ $(TESTS_CPP) $(SRC_CPP) $(LDLIBS)
