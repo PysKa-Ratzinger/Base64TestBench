@@ -1,5 +1,6 @@
-#include <cstdint>
 #include <gtest/gtest.h>
+
+#include <cstdint>
 
 static uint64_t
 Factorial(uint64_t number)

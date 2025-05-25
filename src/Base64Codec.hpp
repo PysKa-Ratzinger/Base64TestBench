@@ -2,7 +2,8 @@
 
 #include <string>
 
-class Base64Codec {
+class Base64Codec
+{
 public:
-  static std::string encode(const std::string &enc);
+	static std::string encode(const std::string& enc);
 };
