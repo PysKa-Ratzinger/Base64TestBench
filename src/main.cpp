@@ -3,7 +3,6 @@
 #include <unistd.h>
 
 #include <cstdlib>
-#include <format>
 #include <functional>
 #include <iostream>
 #include <vector>
@@ -190,8 +189,7 @@ extern "C"
 				        curr_state,
 				        [&](size_t vvv)
 				        {
-					        std::cout << std::format(
-					                "{}",
+					        std::cout.put(
 					                char(uint8_t(key2[i]) ^
 					                     uint8_t(vvv))
 					        );
