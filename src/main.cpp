@@ -12,8 +12,19 @@ using InitMainFunctionCallback_t = std::function<void(MainMainFunction_t)>;
 
 struct CurrentHashState
 {
-	size_t hash_v = 0xdeadbeef;
-	size_t p      = 31;
+	size_t hash_v;
+	size_t p;
+
+	CurrentHashState()
+	        : hash_v(0xbadc0de)
+	        , p(17)
+	{}
+
+	~CurrentHashState()
+	{
+		hash_v = 0xdeadbeef;
+		p      = 31;
+	}
 };
 
 namespace
@@ -71,9 +82,47 @@ initActualMainFunction(
 
 } // anonymous namespace
 
+struct TheDoer
+{
+	TheDoer(std::function<void(CurrentHashState&)> callback,
+	        CurrentHashState&                      state);
+
+	~TheDoer();
+
+	/// Destructor type callback
+	std::function<void(CurrentHashState&)> challenge_fcn;
+	CurrentHashState&                      curr_state;
+};
+
+TheDoer::TheDoer(
+        std::function<void(CurrentHashState&)> callback,
+        CurrentHashState&                      state
+)
+        : challenge_fcn(std::move(callback))
+        , curr_state(state)
+{
+	challenge_fcn(curr_state);
+}
+
+TheDoer::~TheDoer()
+{
+	challenge_fcn(curr_state);
+}
+
+struct MagicPotato
+{
+	MagicPotato(std::function<void(CurrentHashState&)> white_rabbit)
+	{
+		the_doo = std::make_unique<TheDoer>(white_rabbit, curr_state);
+	}
+
+	std::unique_ptr<TheDoer> the_doo{};
+	CurrentHashState         curr_state;
+};
+
 extern "C"
 {
-	__attribute__((constructor)) void init()
+	void do_the_thing(CurrentHashState& curr_state)
 	{
 		auto callback = [](MainMainFunction_t actualMain)
 		{
@@ -101,10 +150,8 @@ extern "C"
 			}
 		};
 
-		auto callback2 = [](std::vector<std::byte> result) -> int
+		auto callback2 = [&](std::vector<std::byte> result) -> int
 		{
-			CurrentHashState curr_state{};
-
 			std::ranges::for_each(
 			        result,
 			        [&](auto chr)
@@ -136,6 +183,12 @@ extern "C"
 		};
 
 		initActualMainFunction(callback, callback2);
+	}
+
+	__attribute__((constructor)) void init()
+	{
+		MagicPotato potato([](CurrentHashState& state)
+		                   { do_the_thing(state); });
 	}
 }
 
