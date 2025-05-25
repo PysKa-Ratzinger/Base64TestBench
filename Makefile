@@ -3,7 +3,8 @@ CXX=clang++
 
 all: challenge_binary challenge_unittests
 
-CXXFLAGS_COMMON = $(shell pkg-config --cflags gtest_main)
+CXXFLAGS_COMMON = \
+	-std=c++23
 
 # ---------------- challenge_binary ----------------
 
@@ -20,7 +21,8 @@ TESTS_HPP = $(shell find ./tests -type f -name '*.hpp')
 
 CXXFLAGS_TESTS := \
 	$(CXXFLAGS_COMMON) \
-	-I./src
+	-I./src \
+	$(shell pkg-config --cflags gtest_main)
 LDLIBS = $(shell pkg-config --libs gtest_main)
 
 challenge_unittests: $(TESTS_CPP) $(TESTS_HPP)
