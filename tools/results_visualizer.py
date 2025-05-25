@@ -38,6 +38,7 @@ class BenchmarkVis:
         self.drawVertLine(32 * 1024, height)
         self.drawVertLine(512 * 1024, height)
         self.drawVertLine(4 * 1024 * 1024, height)
+        self.drawVertLine(32 * 1024 * 1024, height)
 
     def drawVertLine(self, x, height):
         self.vertlines.append(self.window.plot(

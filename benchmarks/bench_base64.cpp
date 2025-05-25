@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <random>
 #include <string_view>
 #include <vector>
 
@@ -51,7 +52,16 @@ BmBase64::SetUp(::benchmark::State& state)
 	        Base64Codec::getEncodedLength(data->arr_raw.size())
 	);
 
-	Base64Codec::encode(data->arr_raw, data->arr_b64);
+	std::string base64_alpha =
+	        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+	std::random_device dev;
+	std::mt19937       rnd{ dev() };
+
+	for (size_t i = 0; i < data->arr_b64.size(); i++) {
+		data->arr_b64.at(i) =
+		        base64_alpha.at(rnd() % base64_alpha.size());
+	}
 }
 
 BENCHMARK_DEFINE_F(BmBase64, decode)
@@ -59,6 +69,9 @@ BENCHMARK_DEFINE_F(BmBase64, decode)
 {
 	auto n_chars = uint64_t(state.range(0));
 
+	// bench warmup
+	// FIXME: Enable this for more accurate (but slower) benchmarks
+#if 0
 	{
 		auto result = Base64Codec::decode(
 		        std::string_view(
@@ -67,6 +80,7 @@ BENCHMARK_DEFINE_F(BmBase64, decode)
 		);
 		benchmark::DoNotOptimize(result);
 	}
+#endif
 
 	for (auto _ : state) {
 		auto result = Base64Codec::decode(
@@ -83,6 +97,9 @@ BENCHMARK_REGISTER_F(BmBase64, decode)
         ->DenseRange(0, 1LU * 1024, 16) // L1
         ->Iterations(10000);
 
+// Re-enable this to benchmark with more data
+#if 0
+
 BENCHMARK_REGISTER_F(BmBase64, decode)
         ->DenseRange(1LU * 1024, 32LU * 1024, 128) // L1
         ->Iterations(200);
@@ -92,9 +109,27 @@ BENCHMARK_REGISTER_F(BmBase64, decode)
         ->Iterations(20);
 
 BENCHMARK_REGISTER_F(BmBase64, decode)
-        ->DenseRange(512LU * 1024, 4LU * 1024 * 1024, 128LU * 1024) // L3
-        ->Iterations(3);
+        ->DenseRange(512LU * 1024, 4LU * 1024 * 1024, 32LU * 1024) // L3
+        ->Iterations(5);
 
 BENCHMARK_REGISTER_F(BmBase64, decode)
-        ->DenseRange(4LU * 1024 * 1024, 32LU * 1024 * 1024, 128LU * 1024) // L3
+        ->DenseRange(4LU * 1024 * 1024, 32LU * 1024 * 1024, 512LU * 1024) // L3
         ->Iterations(2);
+
+BENCHMARK_REGISTER_F(BmBase64, decode)
+        ->DenseRange(
+                32LU * 1024 * 1024,
+                256LU * 1024 * 1024,
+                16LU * 1024 * 1024
+        ) // RAM
+        ->Iterations(1);
+
+BENCHMARK_REGISTER_F(BmBase64, decode)
+        ->DenseRange(
+                256LU * 1024 * 1024,
+                512LU * 1024 * 1024,
+                64LU * 1024 * 1024
+        ) // RAM
+        ->Iterations(1);
+
+#endif
