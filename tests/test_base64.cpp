@@ -52,7 +52,7 @@ TEST(Base64, getDecodedLength)
 	EXPECT_EQ(Base64Codec::getDecodedLength(8), 6);
 }
 
-TEST(Base64, decode)
+TEST(Base64, decodeSimple)
 {
 	auto v_1 = toVU8("Hello there.");
 	auto v_2 = toVU8("Hello there..");
@@ -78,7 +78,23 @@ TEST(Base64, decodeMissingPadding)
 	EXPECT_EQ(v_4, Base64Codec::decode("SGVsbG8gdGhlcmUuLi4u"));
 }
 
-TEST(Base64, encode)
+TEST(Base64, decodeWholeAscii)
+{
+	std::vector<std::byte> raw_data;
+	raw_data.reserve(256);
+	for (size_t i = 0; i < 256; i++) {
+		raw_data.emplace_back(std::byte(i));
+	}
+
+	EXPECT_EQ(
+	        raw_data,
+	        Base64Codec::decode(
+	                "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w=="
+	        )
+	);
+}
+
+TEST(Base64, encodeSimple)
 {
 	auto v_1 = toVU8("Hello there.");
 	auto v_2 = toVU8("Hello there..");
@@ -89,6 +105,20 @@ TEST(Base64, encode)
 	EXPECT_EQ(Base64Codec::encode(v_2), "SGVsbG8gdGhlcmUuLg==");
 	EXPECT_EQ(Base64Codec::encode(v_3), "SGVsbG8gdGhlcmUuLi4=");
 	EXPECT_EQ(Base64Codec::encode(v_4), "SGVsbG8gdGhlcmUuLi4u");
+}
+
+TEST(Base64, encodeWholeAscii)
+{
+	std::vector<std::byte> raw_data;
+	raw_data.reserve(256);
+	for (size_t i = 0; i < 256; i++) {
+		raw_data.emplace_back(std::byte(i));
+	}
+
+	EXPECT_EQ(
+	        Base64Codec::encode(raw_data),
+	        "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w=="
+	);
 }
 
 TEST(Base64, longRandomInputDoesNotCrash)
