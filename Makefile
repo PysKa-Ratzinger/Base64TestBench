@@ -59,7 +59,7 @@ CXXFLAGS_TESTS := \
 LDLIBS_TESTS = \
 	$(LDFLAGS-LIBGTEST)
 
-challenge_unittests: $(SRC_CPP) $(TESTS_CPP) $(TESTS_HPP) $(LIBGTEST)
+challenge_unittests: $(SRC_CPP) $(SRC_HPP) $(TESTS_CPP) $(TESTS_HPP) $(LIBGTEST)
 	$(CXX) $(CXXFLAGS_TESTS) -o $@ $(TESTS_CPP) $(SRC_CPP) $(LDLIBS_TESTS)
 
 # ------------------- challenge_benchmarks ------------
@@ -74,6 +74,6 @@ CXXFLAGS_BENCH := \
 LDLIBS_BENCH = \
 	$(LDFLAGS-LIBBENCHMARKMAIN)
 
-challenge_bench: $(SRC_CPP) $(BENCH_CPP) $(BENCH_HPP) $(LIBBENCHMARK_MAIN)
+challenge_bench: $(SRC_CPP) $(SRC_HPP) $(BENCH_CPP) $(BENCH_HPP) $(LIBBENCHMARK_MAIN)
 	$(CXX) $(CXXFLAGS_BENCH) -o $@ $(BENCH_CPP) $(SRC_CPP) $(LDLIBS_BENCH)
 
