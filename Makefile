@@ -17,8 +17,11 @@ CXXFLAGS_COMMON = \
 SRC_CPP = $(shell find ./src -type f -name '*.cpp' -and ! -name 'main.cpp')
 SRC_HPP = $(shell find ./src -type f -name '*.hpp')
 
+LDFLAGS_CHAL = \
+	-fuse-ld=lld
+
 challenge_binary: $(SRC_CPP) $(SRC_HPP) ./src/main.cpp
-	$(CXX) $(CXXFLAGS_COMMON) -o $@ $(SRC_CPP) ./src/main.cpp
+	$(CXX) $(CXXFLAGS_COMMON) -o $@ $(SRC_CPP) ./src/main.cpp $(LDFLAGS_CHAL)
 
 clean_challenge_binary:
 	$(RM) -v ./challenge_binary
