@@ -68,12 +68,18 @@ BENCHMARK_DEFINE_F(BmBase64, decode)
 		benchmark::DoNotOptimize(result);
 	}
 
+	std::vector<std::byte> result;
+	size_t result_sz = Base64Codec::getDecodedLength(n_chars);
+	result.resize(result_sz);
+
 	for (auto _ : state) {
-		auto result = Base64Codec::decode(
+		Base64Codec::decode(
 		        std::string_view(
 		                std::span(data->arr_b64).subspan(0, n_chars)
-		        )
+		        ),
+		        result
 		);
+
 		benchmark::DoNotOptimize(result);
 	}
 }
